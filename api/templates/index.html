@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing URL Detector</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container min-vh-100 d-flex flex-column justify-content-center py-5">
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <div class="shield-icon mb-4">
+                <img src="{{ url_for('static', filename='images/shield.svg') }}" alt="Security Shield" width="64" height="64">
+            </div>
+            <h1 class="display-5 fw-bold mb-3">Phishing URL Detector</h1>
+            <p class="lead text-muted">Check if a website is legitimate or potentially dangerous</p>
+        </div>
+
+        <!-- URL Input Form -->
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-8 col-lg-6">
+                <form id="urlForm" class="card bg-dark border-secondary">
+                    <div class="card-body p-4">
+                        <div class="mb-3">
+                            <label for="urlInput" class="form-label">Enter URL to check</label>
+                            <div class="input-group">
+                                <input type="url" class="form-control" id="urlInput" 
+                                       placeholder="https://example.com" required
+                                       pattern="https?://.*">
+                                <button class="btn btn-primary" type="submit" id="checkButton">
+                                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                    Check URL
+                                </button>
+                            </div>
+                            <div class="form-text" id="urlError"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Warning Message for Phishing Sites -->
+        <div id="warningMessage" class="alert alert-danger d-none text-center" role="alert">
+            🚨 <strong>Warning! This website has been flagged as a phishing site.</strong>  
+            <br> ⚠️ <strong>Your personal and financial information is at risk!</strong>  
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultSection" class="row justify-content-center mb-5 d-none">
+            <div class="col-md-8 col-lg-6">
+                <div class="card bg-dark border-secondary">
+                    <div class="card-body p-4">
+                        <h5 class="card-title mb-3">Analysis Result</h5>
+                        <div id="resultContent">
+                            <div class="d-flex align-items-center mb-3">
+                                <div id="resultBadge" class="badge me-2"></div>
+                                <div id="resultUrl" class="text-truncate"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Confidence Score</label>
+                                <div class="progress">
+                                    <div id="confidenceBar" class="progress-bar" role="progressbar"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

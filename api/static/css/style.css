@@ -1,0 +1,32 @@
+/* Ensure text remains visible in light mode */
+body {
+    background-color: #f8f9fa; /* Light background */
+    color: #212529; /* Dark text */
+}
+
+/* Card styles */
+.card {
+    background-color: #ffffff !important; /* White background for light mode */
+    border-color: #dee2e6; /* Light border */
+}
+
+/* Result section text */
+.card-title {
+    color: #212529; /* Dark text for "Analysis Result" */
+}
+
+.form-label {
+    color: #212529; /* Dark text for "Confidence Level" */
+}
+
+/* Progress bar for confidence score */
+.progress-bar {
+    color: white;
+}
+
+/* Ensure alert messages are visible */
+.alert-danger {
+    background-color: #f8d7da; /* Light red for warning */
+    color: #721c24; /* Dark red text */
+    border-color: #f5c6cb;
+}
