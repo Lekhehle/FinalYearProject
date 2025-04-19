@@ -62,9 +62,23 @@ async function injectWarningBanner(tabId, result, confidence) {
     }
 }
 
+// Store information about tabs that are being checked
+const pendingChecks = new Map();
+// Store information about tabs that have been approved by the user
+const approvedUrls = new Set();
+
+// Confidence threshold for determining phishing sites
+const CONFIDENCE_THRESHOLD = 0.7;
+
 // Function to check if a URL is phishing
-async function checkUrl(url, tabId) {
+async function checkUrl(url, tabId, isBeforeNavigate = false) {
     try {
+        // Skip check if URL is already approved by user
+        if (approvedUrls.has(url)) {
+            console.log('URL already approved by user:', url);
+            return { result: "Legitimate", confidence: 1.0 };
+        }
+        
         console.log('Checking URL:', url, 'for tab:', tabId);
         
         const response = await fetch('http://localhost:5000/predict', {
@@ -83,9 +97,6 @@ async function checkUrl(url, tabId) {
         const data = await response.json();
         console.log('API Response:', data);
         
-        // Inject warning banner into the webpage
-        await injectWarningBanner(tabId, data.result, data.confidence);
-
         // Update popup with result
         chrome.storage.local.set({
             'lastCheck': {
@@ -96,17 +107,85 @@ async function checkUrl(url, tabId) {
             }
         });
 
+        // Determine if the site is phishing based on both result and confidence
+        let isPhishing = false;
+        
+        // If the API explicitly says it's phishing, trust that
+        if (data.result === "Phishing") {
+            isPhishing = true;
+        }
+        // Even if API says it's legitimate, if confidence is low, treat as phishing
+        else if (data.confidence < CONFIDENCE_THRESHOLD) {
+            isPhishing = true;
+            console.log(`Low confidence (${data.confidence}), treating as phishing despite API result`);
+            // Override the result for display purposes
+            data.result = "Phishing";
+        }
+
+        // If it's a phishing site and we're checking before navigation, block it
+        if (isPhishing && isBeforeNavigate) {
+            // Redirect to warning page
+            const warningUrl = chrome.runtime.getURL(
+                `warning.html?url=${encodeURIComponent(url)}&confidence=${data.confidence}&tabId=${tabId}`
+            );
+            console.log('Redirecting to warning page:', warningUrl);
+            chrome.tabs.update(tabId, { url: warningUrl });
+            return null; // Navigation will be handled by the redirect
+        } else if (!isBeforeNavigate) {
+            // If we're checking after navigation, just show the banner
+            await injectWarningBanner(tabId, data.result, data.confidence);
+        }
+
+        return data;
     } catch (error) {
         console.error('Error checking URL:', error);
+        // In case of error, let the navigation proceed
+        return { result: "Error", confidence: 0 };
     }
 }
+
+// Listen for when a navigation is about to occur
+chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
+    // Only check main frame navigations (not iframes, etc.)
+    if (details.frameId === 0 && details.url.startsWith('http')) {
+        console.log('Before navigate:', details.url, details.tabId);
+        
+        // Skip chrome-extension:// URLs
+        if (details.url.startsWith('chrome-extension://')) {
+            return;
+        }
+        
+        // Store information about this navigation
+        pendingChecks.set(details.tabId, {
+            url: details.url,
+            timestamp: Date.now()
+        });
+        
+        // Check the URL before allowing navigation
+        await checkUrl(details.url, details.tabId, true);
+    }
+});
 
 // Listen for tab updates
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     console.log('Tab updated:', tabId, changeInfo.status, tab.url);
+    
+    // Skip chrome-extension:// URLs
+    if (tab.url && tab.url.startsWith('chrome-extension://')) {
+        return;
+    }
+    
     // Only check when the URL has finished loading
     if (changeInfo.status === 'complete' && tab.url && tab.url.startsWith('http')) {
-        checkUrl(tab.url, tabId);
+        // Check if this tab was previously blocked and now allowed
+        const pendingCheck = pendingChecks.get(tabId);
+        if (pendingCheck && pendingCheck.url === tab.url) {
+            // This URL was already checked during onBeforeNavigate
+            pendingChecks.delete(tabId);
+        } else {
+            // This is a new navigation or the URL changed
+            checkUrl(tab.url, tabId, false);
+        }
     }
 });
 
@@ -114,7 +193,37 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
     console.log('Tab activated:', activeInfo.tabId);
     const tab = await chrome.tabs.get(activeInfo.tabId);
-    if (tab.url && tab.url.startsWith('http')) {
-        checkUrl(tab.url, tab.id);
+    
+    // Skip chrome-extension:// URLs
+    if (tab.url && tab.url.startsWith('chrome-extension://')) {
+        return;
     }
+    
+    if (tab.url && tab.url.startsWith('http')) {
+        checkUrl(tab.url, tab.id, false);
+    }
+});
+
+// Listen for messages from the warning page
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('Received message:', message);
+    
+    if (message.action === 'goBack') {
+        // Navigate back to safety
+        chrome.tabs.goBack(parseInt(message.tabId));
+    } 
+    else if (message.action === 'proceed') {
+        // Add URL to approved list
+        approvedUrls.add(message.url);
+        
+        // Navigate to the original URL
+        chrome.tabs.update(parseInt(message.tabId), { url: message.url });
+    }
+    
+    return true;
+});
+
+// Initialize the extension
+chrome.runtime.onInstalled.addListener(() => {
+    console.log('Phishing URL Detector extension installed');
 });

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Phishing Warning</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+      font-size: 18px;
+    }
+    .warning-container {
+      max-width: 600px;
+      padding: 30px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .warning-icon {
+      font-size: 72px;
+      margin-bottom: 20px;
+      color: #dc3545;
+    }
+    h1 {
+      color: #dc3545;
+      margin-bottom: 20px;
+      font-size: 32px;
+    }
+    .url-display {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      margin: 20px 0;
+      word-break: break-all;
+      font-family: monospace;
+      font-size: 18px;
+    }
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 30px;
+    }
+    .back-button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .proceed-button {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .warning-details {
+      margin-top: 25px;
+      color: #6c757d;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="warning-container">
+    <div class="warning-icon"></div>
+    <h1>Phishing Warning</h1>
+    <p>Our security check has detected that this website might be a phishing attempt designed to steal your personal information.</p>
+    
+    <div class="url-display" id="suspiciousUrl"></div>
+    
+    <p>Phishing websites often impersonate legitimate sites to trick you into revealing sensitive information like passwords, credit card numbers, or personal data.</p>
+    
+    <div class="buttons">
+      <button class="back-button" id="backButton">Go Back to Safety</button>
+      <button class="proceed-button" id="proceedButton">Proceed Anyway (Unsafe)</button>
+    </div>
+  </div>
+
+  <script src="warning.js"></script>
+</body>
+</html>

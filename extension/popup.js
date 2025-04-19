@@ -6,14 +6,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get the last check result from storage
     chrome.storage.local.get(['lastCheck'], function(data) {
         if (data.lastCheck) {
-            const { url, result, confidence, timestamp } = data.lastCheck;
+            const { url, result, timestamp } = data.lastCheck;
             const resultClass = result.toLowerCase();
             resultDiv.className = `result ${resultClass}`;
             resultDiv.innerHTML = `
                 <strong>Last Check Result:</strong>
                 <div>URL: ${url}</div>
                 <div>Status: ${result}</div>
-                <div class="confidence">Confidence: ${(confidence * 100).toFixed(2)}%</div>
                 <div class="timestamp">Checked at: ${new Date(timestamp).toLocaleTimeString()}</div>
             `;
         } else {
@@ -76,7 +75,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 resultDiv.className = `result ${resultClass}`;
                 resultDiv.innerHTML = `
                     <strong>Result:</strong> ${data.result}
-                    <div class="confidence">Confidence: ${(data.confidence * 100).toFixed(2)}%</div>
                     ${data.note ? `<div class="note">${data.note}</div>` : ''}
                 `;
             } catch (error) {
