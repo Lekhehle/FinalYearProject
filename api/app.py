@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, Response
 import pickle
 import numpy as np
 from urllib.parse import urlparse
@@ -6,6 +6,9 @@ import os
 from flask_cors import CORS
 import logging
 from feature_extractor import extract_url_features
+import mysql.connector
+from mysql.connector import Error
+import base64
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG, 
@@ -14,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 # Get the current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
-
 # Define paths relative to the current directory
 model_path = os.path.join(current_dir, 'model.pkl')
 scaler_path = os.path.join(current_dir, 'scaler.pkl')
@@ -34,6 +36,30 @@ CORS(app, resources={
         "allow_headers": ["Content-Type", "Authorization", "Accept"]
     }
 })
+
+# Database configuration
+DB_CONFIG = {
+    'host': os.environ.get('DB_HOST', 'localhost'),
+    'user': os.environ.get('DB_USER', 'root'),
+    'password': os.environ.get('DB_PASSWORD', ''),
+    'database': os.environ.get('DB_NAME', 'webpagePhishingDetector'),
+}
+
+# Automatically migrate screenshot column to LONGBLOB for large attachments
+try:
+    mig_conn = mysql.connector.connect(**DB_CONFIG)
+    mig_cur = mig_conn.cursor()
+    mig_cur.execute("ALTER TABLE phishing_reports MODIFY screenshot LONGBLOB")
+    mig_conn.commit()
+    logger.info("Migrated screenshot column to LONGBLOB")
+except Error as e:
+    logger.info(f"Screenshot column migration skipped: {e}")
+finally:
+    try:
+        mig_cur.close()
+        mig_conn.close()
+    except:
+        pass
 
 # Load the pre-trained model and scaler
 try:
@@ -189,6 +215,101 @@ def predict():
     except Exception as e:
         logger.error(f"Error in prediction: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
+
+# Reporting endpoint
+@app.route('/report', methods=['POST', 'OPTIONS'])
+def report():
+    if request.method == 'OPTIONS':
+        response = app.make_default_options_response()
+        return response
+
+    data = request.get_json()
+    if not data or 'url' not in data:
+        return jsonify({'error': 'Missing url field'}), 400
+
+    url = data['url']
+    description = data.get('description')
+    screenshot = data.get('screenshot')
+
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor()
+        if screenshot:
+            blob = base64.b64decode(screenshot)
+            cursor.execute(
+                "INSERT INTO phishing_reports (url, description, screenshot) VALUES (%s, %s, %s)",
+                (url, description, blob)
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO phishing_reports (url, description) VALUES (%s, %s)",
+                (url, description)
+            )
+        conn.commit()
+        report_id = cursor.lastrowid
+        cursor.close()
+        conn.close()
+        return jsonify({'report_id': report_id, 'status': 'Pending'}), 201
+    except Error as e:
+        logger.error(f"Error inserting report: {e}", exc_info=True)
+        # Return actual DB error for debugging
+        return jsonify({'error': str(e)}), 500
+
+# Screenshot retrieval endpoint
+@app.route('/report/<int:rid>/screenshot', methods=['GET'])
+def get_screenshot(rid):
+    conn = mysql.connector.connect(**DB_CONFIG)
+    cursor = conn.cursor()
+    cursor.execute("SELECT screenshot FROM phishing_reports WHERE id=%s", (rid,))
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    if row and row[0]:
+        return Response(row[0], mimetype='image/png')
+    return '', 404
+
+# Update report status endpoint
+@app.route('/report/<int:rid>/status', methods=['POST', 'OPTIONS'])
+def update_report_status(rid):
+    if request.method == 'OPTIONS':
+        return app.make_default_options_response()
+
+    data = request.get_json()
+    status = data.get('status')
+    if status not in ['Pending', 'Verified', 'Blacklisted']:
+        return jsonify({'error': 'Invalid status'}), 400
+
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE phishing_reports SET status=%s WHERE id=%s",
+            (status, rid)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'status': status}), 200
+    except Error as e:
+        logger.error(f"Error updating report status: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+# Admin reports page
+@app.route('/admin/reports', methods=['GET'])
+def admin_reports():
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT id, url, description, reported_at, status FROM phishing_reports ORDER BY reported_at DESC"
+        )
+        reports = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return render_template('reports.html', reports=reports)
+    except Error as e:
+        logger.error(f"Error fetching reports: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Make sure to bind to 0.0.0.0 to allow external connections

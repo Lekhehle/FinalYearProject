@@ -58,8 +58,17 @@
 <body>
   <h2>Phishing URL Detector</h2>
   <button id="checkPage">Check Current Page</button>
+  <button id="reportPage">Report Current Page</button>
   <div id="loading">Analyzing URL...</div>
   <div id="result">Checking websites automatically...</div>
+  <div id="reportForm" style="display:none; margin-top:15px;">
+    <h3>Report URL</h3>
+    <textarea id="reportDescription" rows="4" cols="30" placeholder="Describe the issue..."></textarea><br/>
+    <input type="file" id="screenshotInput" accept="image/*"><br/>
+    <img id="screenshotPreview" style="max-width:100%; margin-top:10px; display:none;" /><br/>
+    <button id="submitReport">Submit Report</button>
+    <div id="reportStatus" style="margin-top:10px;"></div>
+  </div>
   <script src="popup.js"></script>
 </body>
 </html>

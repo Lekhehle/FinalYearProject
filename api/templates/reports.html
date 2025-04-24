@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Phishing Reports</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+  <nav class="navbar navbar-dark bg-dark">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1">Phishing Detector Admin</span>
+    </div>
+  </nav>
+  <div class="container py-4">
+    <h2 class="mb-4">User Reports</h2>
+    <table class="table table-striped table-bordered">
+      <thead class="table-dark">
+        <tr>
+          <th>ID</th>
+          <th>URL</th>
+          <th>Description</th>
+          <th>Screenshot</th>
+          <th>Reported At</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for report in reports %}
+        <tr>
+          <td>{{ report.id }}</td>
+          <td><a href="{{ report.url }}" target="_blank">{{ report.url }}</a></td>
+          <td>{{ report.description or '-' }}</td>
+          <td>
+            <a href="{{ url_for('get_screenshot', rid=report.id) }}" target="_blank">View</a>
+          </td>
+          <td>{{ report.reported_at }}</td>
+          <td>
+            <span class="badge bg-secondary">{{ report.status }}</span>
+            <select class="form-select status-select ms-2 d-inline-block" data-report-id="{{ report.id }}" style="width:auto; display:inline-block;">
+              <option value="Pending" {% if report.status=='Pending' %}selected{% endif %}>Pending</option>
+              <option value="Verified" {% if report.status=='Verified' %}selected{% endif %}>Verified</option>
+              <option value="Blacklisted" {% if report.status=='Blacklisted' %}selected{% endif %}>Blacklisted</option>
+            </select>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <script>
+      document.querySelectorAll('.status-select').forEach(el => {
+        el.addEventListener('change', async () => {
+          const id = el.dataset.reportId;
+          const status = el.value;
+          try {
+            const resp = await fetch(`/report/${id}/status`, {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({status}),
+            });
+            const data = await resp.json();
+            if (!resp.ok) alert('Error updating status: ' + data.error);
+          } catch (err) {
+            alert('Network error');
+          }
+        });
+      });
+    </script>
+  </div>
+</body>
+</html>

@@ -96,4 +96,20 @@ document.addEventListener('DOMContentLoaded', function() {
             resultDiv.innerHTML = `Error: ${error.message}`;
         }
     });
+
+    // Open standalone report page
+    const reportButton = document.getElementById('reportPage');
+    reportButton.addEventListener('click', async () => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      let reportUrlVal = tab.url;
+      if (reportUrlVal.includes('warning.html')) {
+        try {
+          const params = new URL(reportUrlVal).searchParams;
+          const orig = params.get('url');
+          if (orig) reportUrlVal = decodeURIComponent(orig);
+        } catch (e) {}
+      }
+      const reportPage = chrome.runtime.getURL(`report.html?url=${encodeURIComponent(reportUrlVal)}`);
+      chrome.tabs.create({ url: reportPage });
+    });
 });

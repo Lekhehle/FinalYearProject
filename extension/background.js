@@ -65,7 +65,7 @@ async function injectWarningBanner(tabId, result, confidence) {
 // Store information about tabs that are being checked
 const pendingChecks = new Map();
 // Store information about tabs that have been approved by the user
-const approvedUrls = new Set();
+const approvedUrls = new Map(); // Map of tabId to approved URL
 
 // Confidence threshold for determining phishing sites
 const CONFIDENCE_THRESHOLD = 0.7;
@@ -74,7 +74,7 @@ const CONFIDENCE_THRESHOLD = 0.7;
 async function checkUrl(url, tabId, isBeforeNavigate = false) {
     try {
         // Skip check if URL is already approved by user
-        if (approvedUrls.has(url)) {
+        if (approvedUrls.has(tabId) && approvedUrls.get(tabId) === url) {
             console.log('URL already approved by user:', url);
             return { result: "Legitimate", confidence: 1.0 };
         }
@@ -168,6 +168,12 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
 
 // Listen for tab updates
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    // Clear per-tab approval if navigated away from approved URL
+    const approvedUrl = approvedUrls.get(tabId);
+    if (approvedUrl && tab.url && tab.url !== approvedUrl) {
+        approvedUrls.delete(tabId);
+        console.log('Cleared approved URL for tab', tabId);
+    }
     console.log('Tab updated:', tabId, changeInfo.status, tab.url);
     
     // Skip chrome-extension:// URLs
@@ -214,10 +220,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } 
     else if (message.action === 'proceed') {
         // Add URL to approved list
-        approvedUrls.add(message.url);
+        approvedUrls.set(parseInt(message.tabId), message.url);
         
         // Navigate to the original URL
         chrome.tabs.update(parseInt(message.tabId), { url: message.url });
+    } else if (message.action === 'reportSuccess') {
+        chrome.notifications.create('', {
+            type: 'basic',
+            iconUrl: chrome.runtime.getURL('images/icon48.png'),
+            title: 'Report Submitted',
+            message: 'Report submitted successfully.',
+            priority: 2
+        });
     }
     
     return true;

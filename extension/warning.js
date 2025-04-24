@@ -20,10 +20,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Proceed to the website despite warning
     proceedButton.addEventListener('click', function() {
-        chrome.runtime.sendMessage({ 
-            action: 'proceed', 
-            url: suspiciousUrl,
-            tabId: tabId
-        });
+        chrome.runtime.sendMessage({ action: 'proceed', url: suspiciousUrl, tabId: tabId });
+    });
+
+    // Report this site within the same page
+    const reportBtn = document.getElementById('reportButton');
+    reportBtn.addEventListener('click', function() {
+        const reportPage = chrome.runtime.getURL(`report.html?url=${encodeURIComponent(suspiciousUrl)}`);
+        // Navigate current warning page to reporting form
+        window.location.href = reportPage;
     });
 });

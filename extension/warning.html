@@ -3,9 +3,18 @@
 <head>
   <title>Phishing Warning</title>
   <style>
+    :root {
+      --bg-neutral: #99ccff;
+      --bg-sand: #007bff;
+      --text-dark: #ffffff;
+      --url-bg: #ffffff;
+      --url-border: #cccccc;
+      --focus-blue: #005fcc;
+      --url-text: #000000;
+    }
     body {
       font-family: Arial, sans-serif;
-      background-color: #f8f9fa;
+      background-color: var(--bg-neutral);
       margin: 0;
       padding: 0;
       display: flex;
@@ -19,28 +28,35 @@
     .warning-container {
       max-width: 600px;
       padding: 30px;
-      background-color: white;
+      background-color: var(--bg-sand);
+      color: var(--text-dark);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      line-height: 1.6;
     }
     .warning-icon {
-      font-size: 72px;
-      margin-bottom: 20px;
-      color: #dc3545;
+      width: 32px;
+      height: 32px;
+      margin-right: 8px;
+      vertical-align: middle;
     }
     h1 {
-      color: #dc3545;
+      color: #000000 !important;
       margin-bottom: 20px;
       font-size: 32px;
     }
     .url-display {
-      background-color: #f8f9fa;
+      background-color: var(--url-bg);
+      border: 1px solid var(--url-border);
       padding: 15px;
       border-radius: 4px;
       margin: 20px 0;
       word-break: break-all;
       font-family: monospace;
       font-size: 18px;
+      color: var(--url-text);
     }
     .buttons {
       display: flex;
@@ -66,29 +82,53 @@
       cursor: pointer;
       font-size: 18px;
     }
+    .report-button {
+      background-color: #ffc107;
+      color: #212529;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .report-button:hover {
+      background-color: #e0a800;
+    }
     .warning-details {
       margin-top: 25px;
       color: #6c757d;
       font-size: 16px;
     }
+    .warning-container p, .warning-container .url-display {
+      margin: 1em 0;
+    }
+    button:focus, .back-button:focus, .proceed-button:focus, .report-button:focus {
+      outline: 3px solid var(--focus-blue);
+      outline-offset: 2px;
+    }
   </style>
 </head>
 <body>
-  <div class="warning-container">
-    <div class="warning-icon"></div>
-    <h1>Phishing Warning</h1>
-    <p>Our security check has detected that this website might be a phishing attempt designed to steal your personal information.</p>
+  <div class="warning-container" role="alertdialog" aria-modal="true" aria-labelledby="warningTitle" aria-describedby="warningDesc warningDetails" tabindex="-1">
+    <h1 id="warningTitle"> Phishing Warning</h1>
+    <p id="warningDesc">Our security check has detected that this website might be a phishing attempt designed to steal your personal information.</p>
     
-    <div class="url-display" id="suspiciousUrl"></div>
+    <div class="url-display" id="suspiciousUrl" role="textbox" aria-label="Suspicious URL" aria-readonly="true"></div>
     
-    <p>Phishing websites often impersonate legitimate sites to trick you into revealing sensitive information like passwords, credit card numbers, or personal data.</p>
+    <p id="warningDetails">Please avoid revealing your sensitive information like passwords, credit card numbers, or personal data.</p>
     
-    <div class="buttons">
+    <div class="buttons" role="group" aria-label="Actions">
       <button class="back-button" id="backButton">Go Back to Safety</button>
       <button class="proceed-button" id="proceedButton">Proceed Anyway (Unsafe)</button>
+      <button class="report-button" id="reportButton">Report This Site</button>
     </div>
   </div>
 
+  <script>
+    window.onload = () => {
+      document.querySelector('.warning-container').focus();
+    };
+  </script>
   <script src="warning.js"></script>
 </body>
 </html>

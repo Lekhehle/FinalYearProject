@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Report Phishing URL</title>
+  <style>
+    :root {
+      --bg-neutral: #99ccff;
+      --bg-sand: #007bff;
+      --text-dark: #ffffff;
+      --url-bg: #ffffff;
+      --url-border: #cccccc;
+      --focus-blue: #005fcc;
+      --url-text: #000000;
+    }
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-neutral);
+    }
+    .report-container {
+      /* Sand container background */
+      background-color: var(--bg-sand);
+      color: var(--text-dark);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      line-height: 1.6;
+      width: 90%;
+      max-width: 400px;
+    }
+    .report-container p, .report-container .form-group {
+      margin: 1em 0;
+    }
+    h2 {
+      color: var(--url-text) !important;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .form-group { margin-bottom: 15px; }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, textarea, input[type="file"] {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #screenshotName {
+      display: block;
+      margin-top: 5px;
+      font-style: italic;
+      color: #555;
+    }
+    #reportUrl {
+      color: var(--url-text);
+    }
+    #submitReport {
+      width: 100%;
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #submitReport:hover { background: #218838; }
+    #status {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    .back-btn {
+      display: block;
+      margin-bottom: 15px;
+      background: #6c757d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    input:focus, textarea:focus, button:focus, .back-btn:focus {
+      outline: 3px solid var(--focus-blue);
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="report-container" role="dialog" aria-modal="true" aria-labelledby="formTitle" tabindex="-1">
+    <button id="backBtn" class="back-btn">← Back</button>
+    <h2 id="formTitle">Report URL</h2>
+    <div class="form-group">
+      <label for="reportUrl">URL:</label>
+      <input type="text" id="reportUrl" readonly />
+    </div>
+    <div class="form-group">
+      <label for="reportDescription">Description:</label>
+      <textarea id="reportDescription" rows="4" placeholder="Describe the issue..."></textarea>
+    </div>
+    <div class="form-group">
+      <label for="screenshotInput">Screenshot (optional):</label>
+      <input type="file" id="screenshotInput" accept="image/*">
+      <span id="screenshotName"></span>
+    </div>
+    <button id="submitReport">Submit Report</button>
+    <div id="status"></div>
+  </div>
+  <script>
+    window.onload = () => document.querySelector('.report-container').focus();
+  </script>
+  <script src="report.js"></script>
+</body>
+</html>
